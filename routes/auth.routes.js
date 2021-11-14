@@ -1,5 +1,7 @@
 const { Router } = require('express');
 const bcrypt = require('bcryptjs');
+const config = require('config');
+const jwt = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
 const User = require('../models/User');
 
@@ -65,13 +67,18 @@ router.post(
         });
       }
 
-      const isValidate = await bcrypt.compare(password, user.password)
+      const isValidate = await bcrypt.compare(password, user.password);
       if (!isValidate) {
         return res.status(401).json({
           message: 'Неверный пароль'
-        })
+        });
       }
 
+      const token = jwt.sign({ userId: user.id }, config.get('secretJwt'), {
+        expiresIn: '1h'
+      });
+
+      res.json({ token, userId: user.id });
     } catch (e) {
       res.status(500).json({ message: 'Ошибка сервера' });
     }
